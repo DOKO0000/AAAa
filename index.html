@@ -59,10 +59,12 @@
     
     <h2>Registro</h2>
     <input type="text" id="matriculaRegistro" placeholder="Ingresa tu matrícula (8 dígitos)">
+    <input type="password" id="contrasenaRegistro" placeholder="Ingresa tu contraseña">
     <button onclick="registrarUsuario()">Registrar</button>
     
     <h2>Inicio de Sesión</h2>
     <input type="text" id="matriculaLogin" placeholder="Ingresa tu matrícula (8 dígitos)">
+    <input type="password" id="contrasenaLogin" placeholder="Ingresa tu contraseña">
     <button onclick="iniciarSesion()">Iniciar Sesión</button>
     
     <div id="mensajeError"></div>
@@ -70,8 +72,16 @@
     <script>
         const databaseURL = "https://fotocredencial-30d54-default-rtdb.firebaseio.com/";
 
+        function validarMatricula(matricula) {
+            return fetch(`https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=${matricula}`)
+                .then(response => {
+                    return response.ok; // Verifica si la respuesta es exitosa
+                });
+        }
+
         function registrarUsuario() {
             const matricula = document.getElementById('matriculaRegistro').value;
+            const contrasena = document.getElementById('contrasenaRegistro').value;
             const mensajeError = document.getElementById('mensajeError');
 
             // Validar matrícula
@@ -81,31 +91,42 @@
                 return;
             }
 
-            // Guardar en la base de datos
-            fetch(`${databaseURL}usuarios.json`, {
-                method: 'POST',
-                body: JSON.stringify({ matricula: matricula }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert("Registro exitoso. Puedes iniciar sesión.");
-                    document.getElementById('matriculaRegistro').value = '';
-                } else {
-                    mensajeError.textContent = "Error al registrar. Inténtalo de nuevo.";
+            // Validar matrícula en la URL
+            validarMatricula(matricula).then(isValid => {
+                if (!isValid) {
+                    mensajeError.textContent = "La matrícula no es válida o no refleja una imagen.";
                     mensajeError.style.display = "block";
+                    return;
                 }
-            })
-            .catch(error => {
-                mensajeError.textContent = "Error de conexión. Inténtalo de nuevo.";
-                mensajeError.style.display = "block";
+
+                // Guardar en la base de datos
+                fetch(`${databaseURL}usuarios.json`, {
+                    method: 'POST',
+                    body: JSON.stringify({ matricula: matricula, contrasena: contrasena }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Registro exitoso. Puedes iniciar sesión.");
+                        document.getElementById('matriculaRegistro').value = '';
+                        document.getElementById('contrasenaRegistro').value = '';
+                    } else {
+                        mensajeError.textContent = "Error al registrar. Inténtalo de nuevo.";
+                        mensajeError.style.display = "block";
+                    }
+                })
+                .catch(error => {
+                    mensajeError.textContent = "Error de conexión. Inténtalo de nuevo.";
+                    mensajeError.style.display = "block";
+                });
             });
         }
 
         function iniciarSesion() {
             const matricula = document.getElementById('matriculaLogin').value;
+            const contrasena = document.getElementById('contrasenaLogin').value;
             const mensajeError = document.getElementById('mensajeError');
 
             // Validar matrícula
@@ -120,14 +141,14 @@
             .then(response => response.json())
             .then(data => {
                 const usuarios = Object.values(data);
-                const usuarioEncontrado = usuarios.some(usuario => usuario.matricula === matricula);
+                const usuarioEncontrado = usuarios.find(usuario => usuario.matricula === matricula && usuario.contrasena === contrasena);
                 
                 if (usuarioEncontrado) {
                     alert("Inicio de sesión exitoso.");
                     // Redirigir a la página principal
                     window.location.href = "/index (3).html"; // Cambia esto a la URL correcta
                 } else {
-                    mensajeError.textContent = "Matrícula no registrada. Por favor, regístrate.";
+                    mensajeError.textContent = "Matrícula o contraseña incorrectos. Por favor, intenta de nuevo.";
                     mensajeError.style.display = "block";
                 }
             })
