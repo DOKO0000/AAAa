@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro e Inicio de Sesión</title>
+    <title>Mostrar Imagen Redirigida</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,21 +11,27 @@
             padding: 20px;
             color: #333;
         }
+
         h1 {
             text-align: center;
             color: #2c3e50;
         }
+
+        p {
+            text-align: center;
+            font-size: 1.1em;
+        }
+
         input {
             width: 300px;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 1em;
-            margin: 10px 0;
+            margin: 10px auto;
             display: block;
-            margin-left: auto;
-            margin-right: auto;
         }
+
         button {
             padding: 10px 15px;
             background-color: #3498db;
@@ -34,133 +40,362 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 1em;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 10px 5px;
         }
+
         button:hover {
             background-color: #2980b9;
         }
-        #mensajeError {
-            color: red;
+
+        #imagenContainer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
             text-align: center;
-            display: none; /* Initially hidden */
+            background-color: white;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: none;
         }
+
+        #imagenCredencial {
+            max-width: 90%;
+            height: auto;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
         footer {
             text-align: center;
             margin-top: 20px;
             font-size: 0.9em;
             color: #777;
         }
+
+        .auth-container {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .active-form {
+            display: block;
+        }
+
+        .auth-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #eee;
+            border: none;
+            border-radius: 5px 5px 0 0;
+            margin: 0 5px;
+        }
+
+        .auth-tab.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .error-message {
+            color: red;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .success-message {
+            color: green;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .user-info {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        #mainContent {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <h1>Registro e Inicio de Sesión</h1>
-    
-    <h2>Registro</h2>
-    <input type="text" id="matriculaRegistro" placeholder="Ingresa tu matrícula (8 dígitos)">
-    <input type="password" id="contrasenaRegistro" placeholder="Ingresa tu contraseña">
-    <button onclick="registrarUsuario()">Registrar</button>
-    
-    <h2>Inicio de Sesión</h2>
-    <input type="text" id="matriculaLogin" placeholder="Ingresa tu matrícula (8 dígitos)">
-    <input type="password" id="contrasenaLogin" placeholder="Ingresa tu contraseña">
-    <button onclick="iniciarSesion()">Iniciar Sesión</button>
-    
-    <div id="mensajeError"></div>
-    
-    <script>
-        const databaseURL = "https://fotocredencial-30d54-default-rtdb.firebaseio.com/";
+    <div id="authContainer" class="auth-container">
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="showForm('login')">Iniciar Sesión</button>
+            <button class="auth-tab" onclick="showForm('register')">Registrarse</button>
+        </div>
 
-        function validarMatricula(matricula) {
-            return fetch(`https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=${matricula}`)
-                .then(response => {
-                    return response.ok; // Verifica si la respuesta es exitosa
-                });
-        }
+        <div id="loginForm" class="auth-form active-form">
+            <h2>Iniciar Sesión</h2>
+            <input type="text" id="loginMatricula" placeholder="Matrícula (8 dígitos)" maxlength="8">
+            <input type="password" id="loginPassword" placeholder="Contraseña">
+            <div id="loginError" class="error-message"></div>
+            <div style="text-align: center;">
+                <button onclick="loginUser()">Iniciar Sesión</button>
+            </div>
+        </div>
 
-        function registrarUsuario() {
-            const matricula = document.getElementById('matriculaRegistro').value;
-            const contrasena = document.getElementById('contrasenaRegistro').value;
-            const mensajeError = document.getElementById('mensajeError');
+        <div id="registerForm" class="auth-form">
+            <h2>Registrarse</h2>
+            <input type="text" id="registerMatricula" placeholder="Matrícula (8 dígitos)" maxlength="8">
+            <input type="password" id="registerPassword" placeholder="Contraseña">
+            <input type="password" id="confirmPassword" placeholder="Confirmar Contraseña">
+            <div id="registerError" class="error-message"></div>
+            <div id="registerSuccess" class="success-message"></div>
+            <div style="text-align: center;">
+                <button onclick="registerUser()">Registrarse</button>
+            </div>
+        </div>
+    </div>
 
-            // Validar matrícula
-            if (!/^\d{8}$/.test(matricula)) {
-                mensajeError.textContent = "La matrícula debe ser de 8 dígitos numéricos.";
-                mensajeError.style.display = "block";
-                return;
-            }
+    <div id="mainContent">
+        <div class="user-info">
+            Bienvenido, <span id="userMatricula"></span>
+            <button onclick="logoutUser()" style="background-color: #e74c3c;">Cerrar Sesión</button>
+        </div>
 
-            // Validar matrícula en la URL
-            validarMatricula(matricula).then(isValid => {
-                if (!isValid) {
-                    mensajeError.textContent = "La matrícula no es válida o no refleja una imagen.";
-                    mensajeError.style.display = "block";
-                    return;
-                }
+        <h1>Modificar Matrícula en Enlace</h1>
+        <p>Ingresa una matrícula para ver su foto de credencial:</p>
 
-                // Guardar en la base de datos
-                fetch(`${databaseURL}usuarios.json`, {
-                    method: 'POST',
-                    body: JSON.stringify({ matricula: matricula, contrasena: contrasena }),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        alert("Registro exitoso. Puedes iniciar sesión.");
-                        document.getElementById('matriculaRegistro').value = '';
-                        document.getElementById('contrasenaRegistro').value = '';
-                    } else {
-                        mensajeError.textContent = "Error al registrar. Inténtalo de nuevo.";
-                        mensajeError.style.display = "block";
-                    }
-                })
-                .catch(error => {
-                    mensajeError.textContent = "Error de conexión. Inténtalo de nuevo.";
-                    mensajeError.style.display = "block";
-                });
-            });
-        }
+        <div style="text-align: center;">
+            <input type="text" id="matriculaInput" placeholder="Ingresa una matrícula (ej: 02308901)">
+            <button onclick="cargarImagen()">Mostrar Imagen</button>
+            <button onclick="descargarImagen()" id="descargarBtn" style="display: none;">Descargar Imagen</button>
+        </div>
 
-        function iniciarSesion() {
-            const matricula = document.getElementById('matriculaLogin').value;
-            const contrasena = document.getElementById('contrasenaLogin').value;
-            const mensajeError = document.getElementById('mensajeError');
-
-            // Validar matrícula
-            if (!/^\d{8}$/.test(matricula)) {
-                mensajeError.textContent = "La matrícula debe ser de 8 dígitos numéricos.";
-                mensajeError.style.display = "block";
-                return;
-            }
-
-            // Verificar en la base de datos
-            fetch(`${databaseURL}usuarios.json`)
-            .then(response => response.json())
-            .then(data => {
-                const usuarios = Object.values(data);
-                const usuarioEncontrado = usuarios.find(usuario => usuario.matricula === matricula && usuario.contrasena === contrasena);
-                
-                if (usuarioEncontrado) {
-                    alert("Inicio de sesión exitoso.");
-                    // Redirigir a la página principal
-                    window.location.href = "/index (3).html"; // Cambia esto a la URL correcta
-                } else {
-                    mensajeError.textContent = "Matrícula o contraseña incorrectos. Por favor, intenta de nuevo.";
-                    mensajeError.style.display = "block";
-                }
-            })
-            .catch(error => {
-                mensajeError.textContent = "Error de conexión. Inténtalo de nuevo.";
-                mensajeError.style.display = "block";
-            });
-        }
-    </script>
+        <div id="imagenContainer">
+            <img id="imagenCredencial" src="https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=000000" alt="Foto de credencial">
+        </div>
+    </div>
 
     <footer>
         © 2048 / DOKO.POLO
     </footer>
+    <footer>
+        Si quieres descargar la imagen dejale picado y descargala no sea huevon mijo
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_AUTH_DOMAIN",
+            databaseURL: "https://fotocredencial-30d54-default-rtdb.firebaseio.com",
+            projectId: "fotocredencial-30d54",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // Mostrar formulario de login o registro
+        function showForm(formType) {
+            document.getElementById('loginForm').classList.remove('active-form');
+            document.getElementById('registerForm').classList.remove('active-form');
+            document.querySelector('.auth-tabs button:nth-child(1)').classList.remove('active');
+            document.querySelector('.auth-tabs button:nth-child(2)').classList.remove('active');
+
+            if (formType === 'login') {
+                document.getElementById('loginForm').classList.add('active-form');
+                document.querySelector('.auth-tabs button:nth-child(1)').classList.add('active');
+            } else {
+                document.getElementById('registerForm').classList.add('active-form');
+                document.querySelector('.auth-tabs button:nth-child(2)').classList.add('active');
+            }
+        }
+
+        // Registrar nuevo usuario
+        function registerUser() {
+            const matricula = document.getElementById('registerMatricula').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorElement = document.getElementById('registerError');
+            const successElement = document.getElementById('registerSuccess');
+
+            // Validaciones
+            if (!matricula || !password || !confirmPassword) {
+                errorElement.textContent = 'Todos los campos son obligatorios';
+                return;
+            }
+
+            if (!/^\d{8}$/.test(matricula)) {
+                errorElement.textContent = 'La matrícula debe tener exactamente 8 dígitos numéricos';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorElement.textContent = 'Las contraseñas no coinciden';
+                return;
+            }
+
+            if (password.length < 6) {
+                errorElement.textContent = 'La contraseña debe tener al menos 6 caracteres';
+                return;
+            }
+
+            errorElement.textContent = '';
+
+            // Crear usuario en Firebase Authentication
+            auth.createUserWithEmailAndPassword(`${matricula}@fotocredencial.com`, password)
+                .then((userCredential) => {
+                    // Guardar información adicional en Realtime Database
+                    const user = userCredential.user;
+                    const userData = {
+                        matricula: matricula,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    };
+
+                    return database.ref('users/' + user.uid).set(userData);
+                })
+                .then(() => {
+                    successElement.textContent = 'Registro exitoso! Ahora puedes iniciar sesión';
+                    document.getElementById('registerMatricula').value = '';
+                    document.getElementById('registerPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    showForm('login');
+                })
+                .catch((error) => {
+                    errorElement.textContent = getErrorMessage(error.code);
+                });
+        }
+
+        // Iniciar sesión
+        function loginUser() {
+            const matricula = document.getElementById('loginMatricula').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorElement = document.getElementById('loginError');
+
+            if (!matricula || !password) {
+                errorElement.textContent = 'Matrícula y contraseña son obligatorios';
+                return;
+            }
+
+            if (!/^\d{8}$/.test(matricula)) {
+                errorElement.textContent = 'La matrícula debe tener exactamente 8 dígitos numéricos';
+                return;
+            }
+
+            errorElement.textContent = '';
+
+            auth.signInWithEmailAndPassword(`${matricula}@fotocredencial.com`, password)
+                .then(() => {
+                    // Ocultar auth container y mostrar contenido principal
+                    document.getElementById('authContainer').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'block';
+                    document.getElementById('userMatricula').textContent = matricula;
+                })
+                .catch((error) => {
+                    errorElement.textContent = getErrorMessage(error.code);
+                });
+        }
+
+        // Cerrar sesión
+        function logoutUser() {
+            auth.signOut().then(() => {
+                document.getElementById('authContainer').style.display = 'block';
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('loginMatricula').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('imagenContainer').style.display = 'none';
+                document.getElementById('descargarBtn').style.display = 'none';
+            });
+        }
+
+        // Escuchar cambios en el estado de autenticación
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Usuario logueado
+                database.ref('users/' + user.uid).once('value').then((snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        document.getElementById('authContainer').style.display = 'none';
+                        document.getElementById('mainContent').style.display = 'block';
+                        document.getElementById('userMatricula').textContent = userData.matricula;
+                    }
+                });
+            } else {
+                // Usuario no logueado
+                document.getElementById('authContainer').style.display = 'block';
+                document.getElementById('mainContent').style.display = 'none';
+            }
+        });
+
+        // Traducir códigos de error de Firebase
+        function getErrorMessage(errorCode) {
+            switch (errorCode) {
+                case 'auth/email-already-in-use':
+                    return 'Esta matrícula ya está registrada';
+                case 'auth/invalid-email':
+                    return 'Matrícula inválida';
+                case 'auth/weak-password':
+                    return 'La contraseña es demasiado débil';
+                case 'auth/user-not-found':
+                    return 'Matrícula no registrada';
+                case 'auth/wrong-password':
+                    return 'Contraseña incorrecta';
+                default:
+                    return 'Error al procesar la solicitud';
+            }
+        }
+
+        // Funciones originales para mostrar imágenes
+        function cargarImagen() {
+            const nuevaMatricula = document.getElementById('matriculaInput').value;
+
+            if (nuevaMatricula) {
+                const urlImagen = `https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=${nuevaMatricula}`;
+                const imagen = document.getElementById('imagenCredencial');
+
+                // Update the image source
+                imagen.src = urlImagen;
+
+                // Show the image container
+                document.getElementById('imagenContainer').style.display = 'block';
+
+                // Show the download button
+                document.getElementById('descargarBtn').style.display = 'inline-block';
+            } else {
+                alert('Por favor, ingresa una matrícula válida.');
+            }
+        }
+
+        function descargarImagen() {
+            const imagen = document.getElementById('imagenCredencial');
+            const urlImagen = imagen.src;
+
+            // Create a temporary anchor element
+            const link = document.createElement('a');
+            link.href = urlImagen;
+            link.download = 'credencial.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
 </body>
 </html>
