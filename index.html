@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio de Sesión</title>
+    <title>Registro e Inicio de Sesión</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -55,26 +55,86 @@
     </style>
 </head>
 <body>
-    <h1>Inicio de Sesión</h1>
-    <input type="text" id="usuarioInput" placeholder="Ingresa tu usuario">
-    <input type="password" id="contrasenaInput" placeholder="Ingresa tu contraseña">
+    <h1>Registro e Inicio de Sesión</h1>
+    
+    <h2>Registro</h2>
+    <input type="text" id="matriculaRegistro" placeholder="Ingresa tu matrícula (8 dígitos)">
+    <button onclick="registrarUsuario()">Registrar</button>
+    
+    <h2>Inicio de Sesión</h2>
+    <input type="text" id="matriculaLogin" placeholder="Ingresa tu matrícula (8 dígitos)">
     <button onclick="iniciarSesion()">Iniciar Sesión</button>
+    
     <div id="mensajeError"></div>
     
     <script>
-        function iniciarSesion() {
-            const usuario = document.getElementById('usuarioInput').value;
-            const contrasena = document.getElementById('contrasenaInput').value;
+        const databaseURL = "https://fotocredencial-30d54-default-rtdb.firebaseio.com/";
+
+        function registrarUsuario() {
+            const matricula = document.getElementById('matriculaRegistro').value;
             const mensajeError = document.getElementById('mensajeError');
 
-            // Simulación de validación de usuario
-            if (usuario === "usuarioEjemplo" && contrasena === "contrasenaEjemplo") {
-                // Redirigir a la página principal
-                window.location.href = "/index (3).html"; // Cambia esto a la URL correcta
-            } else {
-                mensajeError.textContent = "Usuario o contraseña incorrectos. Inténtalo de nuevo.";
+            // Validar matrícula
+            if (!/^\d{8}$/.test(matricula)) {
+                mensajeError.textContent = "La matrícula debe ser de 8 dígitos numéricos.";
                 mensajeError.style.display = "block";
+                return;
             }
+
+            // Guardar en la base de datos
+            fetch(`${databaseURL}usuarios.json`, {
+                method: 'POST',
+                body: JSON.stringify({ matricula: matricula }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Registro exitoso. Puedes iniciar sesión.");
+                    document.getElementById('matriculaRegistro').value = '';
+                } else {
+                    mensajeError.textContent = "Error al registrar. Inténtalo de nuevo.";
+                    mensajeError.style.display = "block";
+                }
+            })
+            .catch(error => {
+                mensajeError.textContent = "Error de conexión. Inténtalo de nuevo.";
+                mensajeError.style.display = "block";
+            });
+        }
+
+        function iniciarSesion() {
+            const matricula = document.getElementById('matriculaLogin').value;
+            const mensajeError = document.getElementById('mensajeError');
+
+            // Validar matrícula
+            if (!/^\d{8}$/.test(matricula)) {
+                mensajeError.textContent = "La matrícula debe ser de 8 dígitos numéricos.";
+                mensajeError.style.display = "block";
+                return;
+            }
+
+            // Verificar en la base de datos
+            fetch(`${databaseURL}usuarios.json`)
+            .then(response => response.json())
+            .then(data => {
+                const usuarios = Object.values(data);
+                const usuarioEncontrado = usuarios.some(usuario => usuario.matricula === matricula);
+                
+                if (usuarioEncontrado) {
+                    alert("Inicio de sesión exitoso.");
+                    // Redirigir a la página principal
+                    window.location.href = "/index (3).html"; // Cambia esto a la URL correcta
+                } else {
+                    mensajeError.textContent = "Matrícula no registrada. Por favor, regístrate.";
+                    mensajeError.style.display = "block";
+                }
+            })
+            .catch(error => {
+                mensajeError.textContent = "Error de conexión. Inténtalo de nuevo.";
+                mensajeError.style.display = "block";
+            });
         }
     </script>
 
