@@ -1,95 +1,196 @@
-<html lang="es"><head>
+<!DOCTYPE html>
+<html lang="es">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mostrar Imagen Redirigida</title>
+    <title>Foto de tu Amigo - Visor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&family=Teko:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-        }
-
-        p {
-            text-align: center;
-            font-size: 1.1em;
-        }
-
-        #matriculaInput {
-            width: 300px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1em;
-            margin-right: 10px;
-        }
-
-        button {
-            padding: 10px 15px;
-            background-color: #3498db;
+            font-family: 'Teko', sans-serif;
+            background-color: #1a0f24;
             color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
+            overflow: hidden;
+            cursor: crosshair;
         }
 
-        button:hover {
-            background-color: #2980b9;
+        .main-container {
+            position: relative;
+            background-image: url('https://images.unsplash.com/photo-1518005021863-bd431e9d1754?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); /* Fondo de pared de ladrillos con graffiti */
+            background-size: cover;
+            background-position: center;
         }
 
-        #imagenContainer {
-            position: fixed;
-            bottom: 0;
+        .main-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
             left: 0;
-            width: 100%;
-            text-align: center;
-            background-color: white;
-            padding: 10px;
-            border-top: 1px solid #ccc;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-            display: none; /* Initially hidden */
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6); /* Overlay oscuro para que resalte el texto */
+            z-index: 1;
         }
 
+        .content-wrapper {
+            position: relative;
+            z-index: 2; /* Asegura que el contenido esté sobre el overlay */
+        }
+
+        .brand-font {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #f094f8, #a369f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .form-container input, .form-container button {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .form-container input:focus {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: #f094f8;
+            outline: none;
+            box-shadow: 0 0 15px rgba(240, 148, 248, 0.5);
+        }
+
+        .form-container button {
+            background: linear-gradient(90deg, #a369f7, #f094f8);
+        }
+
+        .form-container button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(240, 148, 248, 0.7);
+        }
+        
+        .image-placeholder {
+             background-color: rgba(255, 255, 255, 0.1);
+             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
         #imagenCredencial {
-            max-width: 90%; /* Adjust maximum width of the image */
-            height: auto; /* Maintain image aspect ratio */
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
-        footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #777;
+        /* Animación de aerosol */
+        .spray-particle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(240, 148, 248, 0.5) 0%, rgba(240, 148, 248, 0) 70%);
+            pointer-events: none;
+            will-change: transform, opacity;
+            animation: fadeOut 1.5s forwards;
         }
+
+        @keyframes fadeOut {
+            to {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        /* Estilo del graffiti */
+        .graffiti-tag {
+            filter: drop-shadow(0 0 5px rgba(240, 148, 248, 0.8)) drop-shadow(0 0 15px rgba(240, 148, 248, 0.5));
+            transform: rotate(-15deg);
+        }
+
+        .graffiti-logo {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            width: 120px; /* Ajusta el tamaño según sea necesario */
+            height: auto;
+            transform: rotate(10deg); /* Ligeramente rotado */
+            filter: drop-shadow(0 0 8px rgba(240, 148, 248, 0.6)); /* Sombra para que resalte */
+            z-index: 3; /* Asegurar que esté por encima del overlay */
+        }
+
     </style>
 </head>
-<body>
-    <h1>Modificar Matrícula en Enlace</h1>
-    <p>Ingresa una matrícula para ver su foto de credencial:</p>
+<body class="w-screen h-screen flex items-center justify-center p-4">
 
-    <div style="text-align: center;">
-        <input type="text" id="matriculaInput" placeholder="Ingresa una matrícula (ej: 02308901)">
-        <button onclick="cargarImagen()">Mostrar Imagen</button>
-        <button onclick="descargarImagen()" id="descargarBtn" style="display: none;">Descargar Imagen</button>
-    </div>
+    <div id="spray-container"></div>
 
-    <div id="imagenContainer">
-        <img id="imagenCredencial" src="https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=000000" alt="Foto de credencial">
+    <div class="main-container w-full max-w-6xl h-full max-h-[800px] rounded-2xl shadow-2xl p-8 md:p-12 overflow-hidden">
+       
+        <img src="https://i.imgur.com/k9b8rK0.png" alt="Graffiti Logo" class="graffiti-logo">
+
+        <div class="content-wrapper grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 w-full h-full items-center">
+            <div class="text-center md:text-left">
+                <h2 class="brand-font text-2xl md:text-3xl tracking-widest text-gray-400 mb-2">DOKO:2037</h2>
+                <h1 class="text-6xl sm:text-7xl md:text-8xl font-bold leading-none mb-4">FOTO DE TU AMIGO?</h1>
+                <p class="text-2xl md:text-3xl gradient-text font-bold tracking-wide">SOLO OCUPAS LA MATRICULA</p>
+            </div>
+
+            <div class="form-container w-full max-w-md mx-auto">
+                <div class="space-y-6">
+                    <div>
+                        <label for="matriculaInput" class="block text-xl uppercase tracking-widest mb-2">Matricula</label>
+                        <input type="text" id="matriculaInput" placeholder="Ej: 02308901" class="w-full px-5 py-3 rounded-lg text-lg text-white placeholder-gray-400">
+                    </div>
+                    
+                    <div id="imagenContainer" class="image-placeholder w-full aspect-square rounded-2xl flex items-center justify-center">
+                         <img id="imagenCredencial" src="" alt="Foto de credencial aparecerá aquí" class="hidden max-w-full max-h-full rounded-lg object-contain">
+                         <span id="image-text" class="text-gray-400">Esperando matrícula...</span>
+                    </div>
+
+                    <button onclick="cargarImagen()" class="w-full py-4 rounded-lg text-xl uppercase tracking-widest font-bold">Buscar</button>
+                    <button onclick="descargarImagen()" id="descargarBtn" class="w-full py-3 rounded-lg text-lg uppercase tracking-widest font-bold mt-2 hidden">Descargar Imagen</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
     
     <script>
+        // --- Animación de Aerosol ---
+        const sprayContainer = document.body;
+        let isSpraying = false;
+
+        function spray(e) {
+            if (!isSpraying) return;
+
+            for (let i = 0; i < 5; i++) { // Genera múltiples partículas por evento
+                const particle = document.createElement('div');
+                particle.classList.add('spray-particle');
+                
+                const size = Math.random() * 50 + 20;
+                const offsetX = (Math.random() - 0.5) * 50;
+                const offsetY = (Math.random() - 0.5) * 50;
+
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${e.clientX + offsetX}px`;
+                particle.style.top = `${e.clientY + offsetY}px`;
+                
+                sprayContainer.appendChild(particle);
+
+                particle.addEventListener('animationend', () => {
+                    particle.remove();
+                });
+            }
+        }
+
+        window.addEventListener('mousedown', () => { isSpraying = true; });
+        window.addEventListener('mouseup', () => { isSpraying = false; });
+        window.addEventListener('mousemove', spray);
+
+
+        // --- Lógica de la aplicación (adaptada de tu archivo) ---
+
         // Configuración de Firebase
         const firebaseConfig = {
             databaseURL: "https://base-de-datos-ip-alupnos-default-rtdb.firebaseio.com/"
@@ -99,7 +200,7 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         
-        // Generar identificadores únicos
+        // El resto de tu código de Firebase para tracking...
         let userId = localStorage.getItem('userId');
         let userNumber = localStorage.getItem('userNumber');
         
@@ -107,7 +208,6 @@
             userId = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
             localStorage.setItem('userId', userId);
             
-            // Obtener el próximo número de usuario
             database.ref('userCounter').transaction((current) => {
                 return (current || 0) + 1;
             }, (error, committed, snapshot) => {
@@ -118,7 +218,6 @@
                 }
             });
         } else if (!userNumber) {
-            // Si tenemos userId pero no userNumber, intentar recuperarlo
             database.ref('userIndex/' + userId).once('value').then((snapshot) => {
                 userNumber = snapshot.val();
                 if (userNumber) {
@@ -127,7 +226,6 @@
             });
         }
 
-        // Inicializar perfil de usuario
         function initializeUserProfile() {
             const userData = {
                 firstVisit: new Date().toISOString(),
@@ -136,169 +234,97 @@
                 userId: userId,
                 userNumber: userNumber
             };
-            
-            // Guardar en userIndex para búsquedas
             database.ref('userIndex/' + userId).set(userNumber);
-            
-            // Guardar en la lista numerada de usuarios
             database.ref('numberedUsers/' + userNumber).set(userData);
         }
 
-        // Obtener información del dispositivo
         function getDeviceInfo() {
-            return {
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                screen: {
-                    width: window.screen.width,
-                    height: window.screen.height,
-                    colorDepth: window.screen.colorDepth
-                },
-                language: navigator.language,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                cookiesEnabled: navigator.cookieEnabled,
-                doNotTrack: navigator.doNotTrack || 'unspecified',
-                connection: navigator.connection ? {
-                    effectiveType: navigator.connection.effectiveType,
-                    downlink: navigator.connection.downlink,
-                    rtt: navigator.connection.rtt
-                } : null
-            };
+            return { userAgent: navigator.userAgent, platform: navigator.platform };
         }
 
-        // Variables para tracking
-        let keystrokeBuffer = '';
-        let lastActivityTime = Date.now();
-        const ACTIVITY_BUFFER_TIME = 2000; // 2 segundos
-
-        // Función para enviar datos de actividad
         function sendActivityData(type, data = {}) {
             if (!userNumber) return;
-            
             const activityData = {
                 timestamp: new Date().toISOString(),
                 activityType: type,
                 userId: userId,
                 userNumber: userNumber,
-                sessionId: 'session_' + Date.now(),
                 ...data
             };
-            
-            // Enviar a la sección de actividades del usuario
             database.ref('userActivities/' + userNumber).push(activityData);
-            
-            // Actualizar última visita
             database.ref('numberedUsers/' + userNumber + '/lastVisit').set(new Date().toISOString());
         }
-
-        // Función para enviar datos de tecleo
-        function sendKeystrokeData() {
-            if (keystrokeBuffer.length > 0) {
-                sendActivityData('typing', {
-                    fieldId: 'matriculaInput',
-                    content: keystrokeBuffer,
-                    length: keystrokeBuffer.length
-                });
-                keystrokeBuffer = '';
-            }
-        }
-
-        // Configurar event listeners
-        function setupTracking() {
-            // Registrar visita inicial
+        
+        document.addEventListener('DOMContentLoaded', () => {
             if (userNumber) {
-                sendActivityData('page_visit', {
-                    pageUrl: window.location.href,
-                    referrer: document.referrer || 'direct'
-                });
+                sendActivityData('page_visit', { pageUrl: window.location.href });
             }
+        });
 
-            // Registrar entrada de texto
-            document.addEventListener('input', (e) => {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                    keystrokeBuffer += e.data || '';
-                    lastActivityTime = Date.now();
-                    clearTimeout(window.typingTimeout);
-                    window.typingTimeout = setTimeout(sendKeystrokeData, ACTIVITY_BUFFER_TIME);
-                }
-            });
-
-            // Registrar clicks
-            document.addEventListener('click', (e) => {
-                sendActivityData('click', {
-                    target: {
-                        tag: e.target.tagName,
-                        id: e.target.id || 'none',
-                        class: e.target.className || 'none'
-                    },
-                    coordinates: {
-                        x: e.clientX,
-                        y: e.clientY,
-                        pageX: e.pageX,
-                        pageY: e.pageY
-                    }
-                });
-            });
-
-            // Registrar antes de salir
-            window.addEventListener('beforeunload', () => {
-                sendKeystrokeData();
-                sendActivityData('page_exit');
-            });
-        }
-
-        // Iniciar tracking cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', setupTracking);
-
+        // --- Funciones para cargar y descargar la imagen ---
+        
         function cargarImagen() {
             const nuevaMatricula = document.getElementById('matriculaInput').value;
+            const imagen = document.getElementById('imagenCredencial');
+            const imageText = document.getElementById('image-text');
 
             if (nuevaMatricula) {
                 const urlImagen = `https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=${nuevaMatricula}`;
-                const imagen = document.getElementById('imagenCredencial');
-
-                // Registrar la búsqueda
+                
                 sendActivityData('search', {
                     matricula: nuevaMatricula,
                     imageUrl: urlImagen
                 });
 
-                // Actualizar la imagen
-                imagen.src = urlImagen;
-                document.getElementById('imagenContainer').style.display = 'block';
-                document.getElementById('descargarBtn').style.display = 'inline-block';
+                imageText.innerText = "Cargando...";
+                imageText.classList.remove('hidden');
+                imagen.classList.add('hidden');
+
+                const tempImg = new Image();
+                tempImg.src = urlImagen;
+                tempImg.onload = () => {
+                    imagen.src = urlImagen;
+                    imagen.classList.remove('hidden');
+                    imageText.classList.add('hidden');
+                    document.getElementById('descargarBtn').classList.remove('hidden');
+                };
+                tempImg.onerror = () => {
+                    imageText.innerText = "No se encontró la imagen.";
+                };
+
             } else {
-                alert('Por favor, ingresa una matrícula válida.');
+                 imageText.innerText = "Ingresa una matrícula válida.";
             }
         }
+        
+        // Permitir buscar con la tecla Enter
+        document.getElementById('matriculaInput').addEventListener('keyup', function(event) {
+            if (event.key === "Enter") {
+                cargarImagen();
+            }
+        });
+
 
         function descargarImagen() {
             const imagen = document.getElementById('imagenCredencial');
             const urlImagen = imagen.src;
 
-            // Registrar descarga
+            if (!urlImagen) return;
+
             sendActivityData('download', {
                 imageUrl: urlImagen
             });
-
-            // Descargar la imagen
+            
+            // Para evitar problemas de CORS, se crea un enlace para que el usuario descargue
             const link = document.createElement('a');
             link.href = urlImagen;
-            link.download = 'credencial.png';
+            link.target = '_blank'; // Abrir en nueva pestaña para que el navegador gestione la descarga
+            link.download = document.getElementById('matriculaInput').value + '.png' || 'credencial.png';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
     </script>
 
-    <footer>
-        © 2048 / DOKO.POLO 
-    </footer>
-    <footer>
-        <a href="https://mira-eosin.vercel.app">Perfil (contacto)</a>
-    </footer>
-
-    <footer>
-    Si quieres descargar la imagen dejale picado y descargala no sea huevon mijo </footer>
-</body></html>
+</body>
+</html>
