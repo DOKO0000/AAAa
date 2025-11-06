@@ -19,7 +19,7 @@
 
         .main-container {
             position: relative;
-            background-image: url('https://images.unsplash.com/photo-1518005021863-bd431e9d1754?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); /* Fondo de pared de ladrillos con graffiti */
+            background-image: url('https://images.unsplash.com/photo-1518005021863-bd431e9d1754?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%D%3D%3D'); /* Fondo de pared de ladrillos con graffiti */
             background-size: cover;
             background-position: center;
         }
@@ -119,6 +119,8 @@
     </style>
 </head>
 <body class="w-screen h-screen flex items-center justify-center p-4">
+
+    <audio id="easterEggSound" src="audio.mp3"></audio>
 
     <div id="spray-container"></div>
 
@@ -264,11 +266,43 @@
         // --- Funciones para cargar y descargar la imagen ---
         
         function cargarImagen() {
-            const nuevaMatricula = document.getElementById('matriculaInput').value;
+            const matriculaInput = document.getElementById('matriculaInput'); // Obtenemos el campo de input
+            const nuevaMatricula = matriculaInput.value; // Obtenemos el valor
             const imagen = document.getElementById('imagenCredencial');
             const imageText = document.getElementById('image-text');
 
-            if (nuevaMatricula) {
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Comprueba si la matrícula es la del Easter Egg
+            if (nuevaMatricula.trim() === "02305755") {
+                
+                // 1. Reproducir sonido
+                const audio = document.getElementById('easterEggSound');
+                if (audio) {
+                    audio.play();
+                }
+
+                // 2. Mostrar la imagen 'gato.jpg'
+                //    Asegúrate de que 'gato.jpg' esté en la misma carpeta del proyecto
+                imagen.src = 'gato.jpg';
+                imagen.classList.remove('hidden');
+                imageText.classList.add('hidden');
+                
+                // 3. Mostrar botón de descarga
+                document.getElementById('descargarBtn').classList.remove('hidden');
+                
+                // 4. Limpiar el campo de matrícula
+                matriculaInput.value = '';
+
+                // 5. Enviar log (para saber que usaron el easter egg)
+                sendActivityData('search', {
+                    matricula: '02305755-EASTEREGG',
+                    imageUrl: 'gato.jpg'
+                });
+            
+            // Si NO es el easter egg, haz la búsqueda normal
+            } else if (nuevaMatricula) {
+            // --- FIN DE LA MODIFICACIÓN (se cambió 'if' por 'else if') ---
+
                 const urlImagen = `https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=${nuevaMatricula}`;
                 
                 sendActivityData('search', {
@@ -319,7 +353,14 @@
             const link = document.createElement('a');
             link.href = urlImagen;
             link.target = '_blank'; // Abrir en nueva pestaña para que el navegador gestione la descarga
-            link.download = document.getElementById('matriculaInput').value + '.png' || 'credencial.png';
+            
+            // Si es el gato, usa un nombre de archivo genérico
+            if (urlImagen.includes('gato.jpg')) {
+                link.download = 'gato.jpg';
+            } else {
+                link.download = document.getElementById('matriculaInput').value + '.png' || 'credencial.png';
+            }
+            
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
