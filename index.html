@@ -356,8 +356,8 @@
             link.target = '_blank'; // Abrir en nueva pestaña para que el navegador gestione la descarga
             
             // Si es la imagen del easter egg, usa un nombre de archivo específico
-            if (urlImagen.includes('negro.JPG')) {
-                link.download = 'negro.JPG';
+            if (urlImagen.includes('negro.jpg')) {
+                link.download = 'negro.jpg';
             } else {
                 // Si no es el easter egg, usa la matrícula como nombre del archivo
                 link.download = document.getElementById('matriculaInput').value + '.png' || 'credencial.png';
