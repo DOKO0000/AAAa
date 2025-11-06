@@ -120,7 +120,8 @@
 </head>
 <body class="w-screen h-screen flex items-center justify-center p-4">
 
-    <audio id="easterEggSound" src="audio2.mp3"></audio>
+    <audio id="audioEasterEgg1" src="audio.mp3"></audio>
+    <audio id="audioEasterEgg2" src="audio2.mp3"></audio>
 
     <div id="spray-container"></div>
 
@@ -267,21 +268,43 @@
         
         function cargarImagen() {
             const matriculaInput = document.getElementById('matriculaInput');
-            const nuevaMatricula = matriculaInput.value;
+            const nuevaMatricula = matriculaInput.value.trim();
             const imagen = document.getElementById('imagenCredencial');
             const imageText = document.getElementById('image-text');
+            
+            let isEasterEgg = false;
+            let easterEggImage = '';
+            let easterEggAudioId = '';
+            let easterEggMatriculaCode = '';
 
-            // --- LÓGICA DEL EASTER EGG (Matrícula: 02308778, Imagen: negro.jpg, Audio: audio2.mp3) ---
-            if (nuevaMatricula.trim() === "02308778") {
+            // --- CHEQUEO DEL PRIMER EASTER EGG: 02305755 (gato.jpg, audio.mp3) ---
+            if (nuevaMatricula === "02305755") {
+                isEasterEgg = true;
+                easterEggImage = 'gato.jpg';
+                easterEggAudioId = 'audioEasterEgg1';
+                easterEggMatriculaCode = '02305755-EASTEREGG';
+            } 
+            // --- CHEQUEO DEL SEGUNDO EASTER EGG: 02308778 (negro.JPG, audio2.mp3) ---
+            else if (nuevaMatricula === "02308778") {
+                isEasterEgg = true;
+                easterEggImage = 'negro.JPG';
+                easterEggAudioId = 'audioEasterEgg2';
+                easterEggMatriculaCode = '02308778-EASTEREGG';
+            }
+            
+            // --- LÓGICA DEL EASTER EGG ---
+            if (isEasterEgg) {
                 
                 // 1. Reproducir sonido
-                const audio = document.getElementById('easterEggSound');
+                const audio = document.getElementById(easterEggAudioId);
                 if (audio) {
+                    // Reiniciar y reproducir (por si ya se reprodujo antes)
+                    audio.currentTime = 0;
                     audio.play();
                 }
 
-                // 2. Mostrar la imagen 'negro.jpg'
-                imagen.src = 'negro.jpg';
+                // 2. Mostrar la imagen estática
+                imagen.src = easterEggImage;
                 imagen.classList.remove('hidden');
                 imageText.classList.add('hidden');
                 
@@ -293,16 +316,15 @@
 
                 // 5. Enviar log 
                 sendActivityData('search', {
-                    matricula: '02308778-EASTEREGG',
-                    imageUrl: 'negro.jpg'
+                    matricula: easterEggMatriculaCode,
+                    imageUrl: easterEggImage
                 });
                 
                 // Finaliza la función aquí
                 return;
             }
-            // -----------------------------------------------------------------
-
-            // Lógica de búsqueda normal
+            
+            // --- LÓGICA DE BÚSQUEDA NORMAL ---
             if (nuevaMatricula) {
                 const urlImagen = `https://apps-3.cobachbc.edu.mx/CompetenciasGenericas/Ajax/GetFotoCredencial?pMatricula=${nuevaMatricula}`;
                 
@@ -355,11 +377,13 @@
             link.href = urlImagen;
             link.target = '_blank'; // Abrir en nueva pestaña para que el navegador gestione la descarga
             
-            // Si es la imagen del easter egg, usa un nombre de archivo específico
-            if (urlImagen.includes('negro.jpg')) {
-                link.download = 'negro.jpg';
+            // Determinar el nombre del archivo basado en la imagen cargada
+            if (urlImagen.includes('negro.JPG')) {
+                link.download = 'negro.JPG';
+            } else if (urlImagen.includes('gato.jpg')) {
+                link.download = 'gato.jpg';
             } else {
-                // Si no es el easter egg, usa la matrícula como nombre del archivo
+                // Si no es un easter egg, usa la matrícula o un nombre por defecto
                 link.download = document.getElementById('matriculaInput').value + '.png' || 'credencial.png';
             }
 
