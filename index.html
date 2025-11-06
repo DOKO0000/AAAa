@@ -271,7 +271,7 @@
             const imagen = document.getElementById('imagenCredencial');
             const imageText = document.getElementById('image-text');
 
-            // --- LÓGICA DEL EASTER EGG (Matrícula: 02308778, Imagen: negro.JPG, Audio: audio2.mp3) ---
+            // --- LÓGICA DEL EASTER EGG (Matrícula: 02308778, Imagen: negro.jpg, Audio: audio2.mp3) ---
             if (nuevaMatricula.trim() === "02308778") {
                 
                 // 1. Reproducir sonido
@@ -280,8 +280,8 @@
                     audio.play();
                 }
 
-                // 2. Mostrar la imagen 'negro.JPG'
-                imagen.src = 'negro.JPG';
+                // 2. Mostrar la imagen 'negro.jpg'
+                imagen.src = 'negro.jpg';
                 imagen.classList.remove('hidden');
                 imageText.classList.add('hidden');
                 
@@ -294,7 +294,7 @@
                 // 5. Enviar log 
                 sendActivityData('search', {
                     matricula: '02308778-EASTEREGG',
-                    imageUrl: 'negro.JPG'
+                    imageUrl: 'negro.jpg'
                 });
                 
                 // Finaliza la función aquí
